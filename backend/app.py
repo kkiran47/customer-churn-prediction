@@ -1,18 +1,17 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
-import pickle
 import joblib
 
 app = Flask(__name__)
 CORS(app)
 
-# Load models
+# Load models with joblib (safe across scikit-learn versions)
 models = {
-    "Logistic Regression": pickle.load(open("models/log_reg.pkl", "rb")),
-    "Decision Tree": pickle.load(open("models/decision_tree.pkl", "rb")),
-    "Random Forest": pickle.load(open("models/random_forest.pkl", "rb")),
-    "Support Vector Machine": pickle.load(open("models/svm.pkl", "rb"))
+    "Logistic Regression": joblib.load("models/log_reg.pkl"),
+    "Decision Tree": joblib.load("models/decision_tree.pkl"),
+    "Random Forest": joblib.load("models/random_forest.pkl"),
+    "Support Vector Machine": joblib.load("models/svm.pkl")
 }
 
 # Load scaler & encoders
@@ -57,4 +56,7 @@ def predict():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    # Render expects 0.0.0.0 for external access, and PORT from env
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
