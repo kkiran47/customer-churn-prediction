@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>Customer Churn Prediction</title>
+    <style>
+        :root {
+            /* Light mode colors - vibrant and attractive */
+            --bg-primary: #fefefe;
+            --bg-secondary: #f0f7ff;
+            --bg-card: #ffffff;
+            --text-primary: #172554;
+            --text-secondary: #5a67d8;
+            --border-color: #cbd5e1;
+            --accent-color: #4f46e5;
+            --accent-hover: #3730a3;
+            --success-color: #059669;
+            --error-color: #dc2626;
+            --warning-color: #d97706;
+            --shadow: 0 3px 5px 0 rgb(0 0 0 / 0.12), 0 2px 3px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 12px 18px -4px rgb(0 0 0 / 0.12), 0 6px 8px -4px rgb(0 0 0 / 0.1);
+            --gradient-accent: linear-gradient(135deg, #4f46e5, #059669);
+            /* Section-specific colors */
+            --personal-bg: #e6f3ff;
+            --phone-bg: #fefcbf;
+            --internet-bg: #e6ffed;
+            --billing-bg: #ffe6e6;
+            /* Input-specific colors */
+            --input-bg: #ffffff;
+            --input-border: linear-gradient(135deg, #4f46e5, #10b981);
+            --input-focus-glow: rgba(79, 70, 229, 0.2);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                /* Dark mode colors - vibrant and cohesive */
+                --bg-primary: #1e1b4b;
+                --bg-secondary: #2d3157;
+                --bg-card: #2d3157;
+                --text-primary: #e0e7ff;
+                --text-secondary: #a5b4fc;
+                --border-color: #4b5563;
+                --accent-color: #6366f1;
+                --accent-hover: #4f46e5;
+                --success-color: #10b981;
+                --error-color: #ef4444;
+                --warning-color: #f59e0b;
+                /* Dark mode section-specific colors */
+                --personal-bg: #2c3e50;
+                --phone-bg: #4c2c2c;
+                --internet-bg: #2c4c3e;
+                --billing-bg: #4c2c4c;
+                /* Dark mode input-specific colors */
+                --input-bg: #3b3f66;
+                --input-border: linear-gradient(135deg, #6366f1, #10b981);
+                --input-focus-glow: rgba(99, 102, 241, 0.3);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: url('https://images.unsplash.com/photo-1516321310765-0e7b3f0dc5df?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80') no-repeat center center fixed;
+            background-size: cover;
+            background-color: var(--bg-primary); /* Fallback gradient */
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            /* Alternative solid color background */
+            /* background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%); */
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85); /* Light overlay for readability */
+            z-index: -1;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body::before {
+                background: rgba(30, 27, 75, 0.85); /* Dark overlay for readability */
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+            opacity: 0;
+            animation: fadeInContainer 1s ease-out forwards;
+        }
+
+        @keyframes fadeInContainer {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .header h1::before {
+            content: '🤖';
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            animation: pulseEmoji 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseEmoji {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            font-weight: 400;
+        }
+
+        .form-container {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            align-items: start;
+        }
+
+        .form-section {
+            border-radius: 0.75rem;
+            border: 2px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            padding: 0.75rem 1.75rem 1.75rem;
+            cursor: pointer;
+        }
+
+        .form-section:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Section-specific backgrounds and sizing */
+        .form-section.personal {
+            background: var(--personal-bg);
+            grid-row: span 2;
+        }
+
+        .form-section.phone {
+            background: var(--phone-bg);
+            grid-row: span 1;
+        }
+
+        .form-section.internet {
+            background: var(--internet-bg);
+            grid-row: span 3;
+        }
+
+        .form-section.billing {
+            background: var(--billing-bg);
+            grid-row: span 2;
+        }
+
+        /* Valid and invalid section styles */
+        .form-section.valid-section {
+            border-color: var(--success-color);
+        }
+
+        .form-section.invalid-section {
+            border-color: var(--error-color);
+        }
+
+        .section-title {
+            font-size: clamp(1.2rem, 3vw, 1.35rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '▼';
+            font-size: 1rem;
+            position: absolute;
+            right: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .form-section.open .section-title::after {
+            transform: rotate(180deg);
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 1.25rem;
+            background: var(--accent-color);
+            border-radius: 2px;
+        }
+
+        .section-title.personal::before {
+            content: '👤';
+            width: auto;
+            height: auto;
+            background: none;
+            font-size: 1.5rem;
+        }
+
+        .section-title.phone::before {
+            content: '📞';
+            width: auto;
+            height: auto;
+            background: none;
+            font-size: 1.5rem;
+        }
+
+        .section-title.internet::before {
+            content: '🌐';
+            width: auto;
+            height: auto;
+            background: none;
+            font-size: 1.5rem;
+        }
+
+        .section-title.billing::before {
+            content: '💳';
+            width: auto;
+            height: auto;
+            background: none;
+            font-size: 1.5rem;
+        }
+
+        .form-section .form-group {
+            display: block;
+            max-height: 0;
+            opacity: 0;
+            margin-bottom: 0;
+            position: relative;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, opacity 0.5s ease-out, margin-bottom 0.5s ease-out;
+        }
+
+        .form-section.open .form-group {
+            max-height: 1000px; /* Large enough to accommodate content */
+            opacity: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: clamp(1rem, 2.2vw, 1.1rem);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Label animation for focus state */
+        input[type="text"]:focus + label,
+        input[type="number"]:focus + label,
+        select:focus + label,
+        input[type="text"]:not(:placeholder-shown) + label,
+        input[type="number"]:not(:placeholder-shown) + label,
+        select:not(:placeholder-shown) + label {
+            transform: translateY(-1.8rem) scale(0.9);
+            color: var(--accent-color);
+            font-weight: 700;
+            opacity: 1;
+            animation: labelPop 0.3s ease-out;
+        }
+
+        @keyframes labelPop {
+            from {
+                transform: translateY(0) scale(1);
+                opacity: 0.7;
+            }
+            to {
+                transform: translateY(-1.8rem) scale(0.9);
+                opacity: 1;
+            }
+        }
+
+        /* Add icons to inputs and selects */
+        .form-group {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .form-group::before {
+            content: '';
+            font-size: 1.1rem;
+            position: absolute;
+            left: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .form-group:hover::before {
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .form-group.gender::before { content: '🚻'; }
+        .form-group.senior-citizen::before { content: '👴'; }
+        .form-group.partner::before { content: '💑'; }
+        .form-group.dependents::before { content: '👪'; }
+        .form-group.tenure::before { content: '⏳'; }
+        .form-group.phone-service::before { content: '📱'; }
+        .form-group.multiple-lines::before { content: '📞'; }
+        .form-group.internet-service::before { content: '🖧'; }
+        .form-group.online-security::before { content: '🔒'; }
+        .form-group.online-backup::before { content: '💾'; }
+        .form-group.device-protection::before { content: '🛡️'; }
+        .form-group.tech-support::before { content: '🛠️'; }
+        .form-group.streaming-tv::before { content: '📺'; }
+        .form-group.streaming-movies::before { content: '🎥'; }
+        .form-group.contract::before { content: '📝'; }
+        .form-group.paperless-billing::before { content: '📧'; }
+        .form-group.payment-method::before { content: '💵'; }
+        .form-group.monthly-charges::before { content: '💸'; }
+        .form-group.total-charges::before { content: '💰'; }
+
+        .required {
+            color: var(--error-color);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            max-width: 300px;
+            padding: 0.8rem 1rem 0.8rem 2.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            background: var(--input-bg);
+            background-clip: padding-box;
+            box-shadow: 0 0 0 2px transparent, inset 0 0 0 2px var(--border-color);
+            color: var(--text-primary);
+            font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+            transition: all 0.3s ease, transform 0.2s ease;
+            position: relative;
+            appearance: none;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--input-focus-glow), inset 0 0 0 2px var(--accent-color);
+            background: var(--input-bg);
+            transform: scale(1.02);
+        }
+
+        input[type="text"]:invalid,
+        input[type="number"]:invalid,
+        select:invalid {
+            box-shadow: 0 0 0 2px var(--error-color);
+        }
+
+        input[type="text"]:valid,
+        input[type="number"]:valid,
+        select:valid {
+            box-shadow: 0 0 0 2px var(--success-color);
+        }
+
+        /* Custom select dropdown arrow */
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%235a67d8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 12px;
+            transition: background-position 0.3s ease;
+        }
+
+        select:focus {
+            background-position: right 0.8rem center;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            select {
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a5b4fc' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            }
+        }
+
+        .radio-group,
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .radio-item,
+        .checkbox-item {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            max-width: 200px;
+            padding: 0.8rem 1rem 0.8rem 2.5rem;
+            border-radius: 0.5rem;
+            background: var(--input-bg);
+            box-shadow: 0 0 0 2px var(--border-color);
+            color: var(--text-primary);
+            font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+            transition: all 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .radio-item:hover,
+        .checkbox-item:hover {
+            box-shadow: 0 0 0 2px var(--accent-color);
+            background: var(--bg-secondary);
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        .radio-item.selected,
+        .checkbox-item.selected {
+            box-shadow: 0 0 0 2px var(--accent-color);
+            background: linear-gradient(135deg, var(--accent-color), var(--success-color));
+            color: white;
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+            transform: scale(1.02);
+            animation: selectPop 0.2s ease-out;
+        }
+
+        @keyframes selectPop {
+            from {
+                transform: scale(1);
+            }
+            to {
+                transform: scale(1.02);
+            }
+        }
+
+        .radio-item input[type="radio"],
+        .checkbox-item input[type="checkbox"] {
+            appearance: none;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            margin: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .radio-item label,
+        .checkbox-item label {
+            position: absolute;
+            top: 50%;
+            left: 2.5rem;
+            transform: translateY(-50%);
+            font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+            color: var(--text-secondary);
+            pointer-events: none;
+            transition: all 0.3s ease;
+            margin-bottom: 0;
+        }
+
+        .radio-item input[type="radio"]:checked + label,
+        .checkbox-item input[type="checkbox"]:checked + label {
+            color: white;
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .radio-item input[type="radio"]:focus + label,
+        .checkbox-item input[type="checkbox"]:focus + label {
+            color: var(--accent-color);
+        }
+
+        .submit-section {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .submit-btn {
+            background: var(--gradient-accent);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 0.75rem;
+            font-size: clamp(1rem, 2.5vw, 1.1rem);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease, transform 0.2s ease;
+            box-shadow: var(--shadow);
+            min-width: 180px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .submit-btn::before {
+            content: '🔮';
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, var(--accent-hover), var(--success-color));
+        }
+
+        .submit-btn:hover:not(:disabled)::before {
+            transform: scale(1.2);
+        }
+
+        .submit-btn:active {
+            transform: scale(0.95);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .spinner {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .submit-text {
+            display: block;
+            transition: opacity 0.3s ease;
+        }
+
+        .submit-text.hidden {
+            display: none;
+            opacity: 0;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: clamp(0.8rem, 2vw, 0.875rem);
+            margin-top: 0.25rem;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .form-group.error .error-message {
+            display: block;
+            opacity: 1;
+        }
+
+        .results-container {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            display: none;
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .results-container.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .results-title {
+            font-size: clamp(1.5rem, 4vw, 1.8rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .results-title::before {
+            content: '🎯';
+            font-size: 1.5rem;
+            animation: pulseEmoji 2s infinite ease-in-out;
+        }
+
+        .results-subtitle {
+            color: var(--text-secondary);
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+        }
+
+        .results-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+
+        .model-result {
+            background: var(--bg-secondary);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .results-container.show .model-result {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .model-result:nth-child(1) { transition-delay: 0.1s; }
+        .model-result:nth-child(2) { transition-delay: 0.2s; }
+        .model-result:nth-child(3) { transition-delay: 0.3s; }
+        .model-result:nth-child(4) { transition-delay: 0.4s; }
+        .model-result:nth-child(5) { transition-delay: 0.5s; }
+
+        .model-result:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .model-result::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-accent);
+            transition: height 0.3s ease;
+        }
+
+        .model-result:hover::before {
+            height: 6px;
+        }
+
+        .model-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .model-name {
+            font-weight: 700;
+            font-size: clamp(1rem, 2.5vw, 1.1rem);
+            color: var(--text-primary);
+        }
+
+        .model-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 4px rgb(0 0 0 / 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .model-result:hover .model-icon {
+            transform: rotate(360deg);
+        }
+
+        .prediction-section {
+            margin: 1rem 0;
+        }
+
+        .prediction-label {
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction {
+            font-size: clamp(1.3rem, 3vw, 1.5rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .prediction.churn {
+            color: var(--error-color);
+        }
+
+        .prediction.no-churn {
+            color: var(--success-color);
+        }
+
+        .prediction-icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .prediction:hover .prediction-icon {
+            transform: scale(1.2);
+        }
+
+        .confidence-bar {
+            background: var(--border-color);
+            border-radius: 1rem;
+            height: 8px;
+            margin: 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 1rem;
+            background: var(--gradient-accent);
+            transition: width 1s ease-in-out;
+        }
+
+        .confidence-text {
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .probability-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .probability-label {
+            font-size: clamp(0.75rem, 2vw, 0.8rem);
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .probability-value {
+            font-size: clamp(1rem, 2.5vw, 1.1rem);
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .alert.show {
+            display: block;
+            opacity: 1;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite, scaleIn 0.5s ease-out;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            font-weight: 600;
+            animation: fadeInText 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        @keyframes fadeInText {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Enhanced responsive design */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 1rem 0.75rem;
+            }
+
+            .form-container {
+                padding: 1.5rem;
+            }
+
+            .form-grid {
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 1rem;
+            }
+
+            .form-section {
+                padding: 0.5rem 1.25rem 1.25rem;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            select {
+                max-width: 280px;
+                padding: 0.75rem 1rem 0.75rem 2.2rem;
+                font-size: clamp(0.9rem, 2vw, 0.95rem);
+            }
+
+            .radio-item,
+            .checkbox-item {
+                max-width: 180px;
+                padding: 0.75rem 1rem 0.75rem 2.2rem;
+                font-size: clamp(0.9rem, 2vw, 0.95rem);
+            }
+
+            .form-group {
+                padding-left: 1.8rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .form-group::before {
+                left: 0.4rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-section {
+                grid-row: auto !important;
+                padding: 0.5rem 1.5rem 1.5rem;
+            }
+
+            .radio-group,
+            .checkbox-group {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .radio-item,
+            .checkbox-item {
+                max-width: none;
+                padding: 0.75rem 1rem 0.75rem 2rem;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .loading-spinner {
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+
+            .loading-text {
+                font-size: clamp(0.9rem, 2vw, 1rem);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.75rem;
+            }
+
+            .header h1 {
+                font-size: clamp(1.5rem, 5vw, 1.8rem);
+            }
+
+            .form-container {
+                padding: 1.25rem;
+            }
+
+            .form-section {
+                padding: 0.5rem 1.25rem 1.25rem;
+            }
+
+            .form-group {
+                padding-left: 1.75rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .form-group::before {
+                left: 0.3rem;
+                font-size: 0.9rem;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            select {
+                max-width: 100%;
+                padding: 0.75rem 1rem 0.75rem 2rem;
+                font-size: clamp(0.85rem, 2.5vw, 0.9rem);
+            }
+
+            .radio-item,
+            .checkbox-item {
+                max-width: 100%;
+                padding: 0.75rem 1rem 0.75rem 2rem;
+                font-size: clamp(0.85rem, 2.5vw, 0.9rem);
+                margin-bottom: 0.5rem;
+            }
+
+            .radio-item label,
+            .checkbox-item label {
+                left: 2rem;
+                font-size: clamp(0.85rem, 2.5vw, 0.9rem);
+            }
+
+            .radio-group,
+            .checkbox-group {
+                gap: 0.5rem;
+            }
+
+            .section-title {
+                font-size: clamp(1.1rem, 3vw, 1.2rem);
+            }
+
+            .label {
+                font-size: clamp(0.9rem, 2.2vw, 1rem);
+                margin-bottom: 0.6rem;
+            }
+
+            .submit-btn {
+                width: 100%;
+                padding: 0.75rem;
+                min-width: auto;
+            }
+
+            .loading-spinner {
+                width: 2rem;
+                height: 2rem;
+            }
+
+            .loading-text {
+                font-size: clamp(0.8rem, 2vw, 0.9rem);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Predicting Churn...</div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Customer Churn Prediction</h1>
+            <p>Enter customer details to predict churn probability using multiple ML models</p>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alertContainer"></div>
+
+        <form id="predictionForm" class="form-container" novalidate>
+            <div class="form-grid">
+                <!-- Personal Information -->
+                <div class="form-section personal">
+                    <h3 class="section-title personal">Personal Information</h3>
+                    
+                    <div class="form-group gender">
+                        <label for="gender">Gender <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="gender_male" name="gender" value="Male" required>
+                                <label for="gender_male">Male</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="gender_female" name="gender" value="Female" required>
+                                <label for="gender_female">Female</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="gender_others" name="gender" value="Others" required>
+                                <label for="gender_others">Others</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please select a gender</div>
+                    </div>
+
+                    <div class="form-group senior-citizen">
+                        <label for="SeniorCitizen">Senior Citizen <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="senior_yes" name="SeniorCitizen" value="1" required>
+                                <label for="senior_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="senior_no" name="SeniorCitizen" value="0" required>
+                                <label for="senior_no">No</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify if senior citizen</div>
+                    </div>
+
+                    <div class="form-group partner">
+                        <label for="Partner">Partner <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="partner_yes" name="Partner" value="Yes" required>
+                                <label for="partner_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="partner_no" name="Partner" value="No" required>
+                                <label for="partner_no">No</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify if has partner</div>
+                    </div>
+
+                    <div class="form-group dependents">
+                        <label for="Dependents">Dependents <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="dependents_yes" name="Dependents" value="Yes" required>
+                                <label for="dependents_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="dependents_no" name="Dependents" value="No" required>
+                                <label for="dependents_no">No</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify if has dependents</div>
+                    </div>
+
+                    <div class="form-group tenure">
+                        <label for="tenure">Tenure (months) <span class="required">*</span></label>
+                        <input type="number" id="tenure" name="tenure" min="0" max="100" required placeholder="e.g., 12">
+                        <div class="error-message">Please enter tenure in months (0-100)</div>
+                    </div>
+                </div>
+
+                <!-- Phone Services -->
+                <div class="form-section phone">
+                    <h3 class="section-title phone">Phone Services</h3>
+                    
+                    <div class="form-group phone-service">
+                        <label for="PhoneService">Phone Service <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="phone_yes" name="PhoneService" value="Yes" required>
+                                <label for="phone_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="phone_no" name="PhoneService" value="No" required>
+                                <label for="phone_no">No</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify if has phone service</div>
+                    </div>
+
+                    <div class="form-group multiple-lines">
+                        <label for="MultipleLines">Multiple Lines <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="multiple_yes" name="MultipleLines" value="Yes" required>
+                                <label for="multiple_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="multiple_no" name="MultipleLines" value="No" required>
+                                <label for="multiple_no">No</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="multiple_no_phone" name="MultipleLines" value="No phone service" required>
+                                <label for="multiple_no_phone">No phone service</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify multiple lines status</div>
+                    </div>
+                </div>
+
+                <!-- Internet Services -->
+                <div class="form-section internet">
+                    <h3 class="section-title internet">Internet Services</h3>
+                    
+                    <div class="form-group internet-service">
+                        <label for="InternetService">Internet Service <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="internet_dsl" name="InternetService" value="DSL" required>
+                                <label for="internet_dsl">DSL</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="internet_fiber" name="InternetService" value="Fiber optic" required>
+                                <label for="internet_fiber">Fiber optic</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="internet_no" name="InternetService" value="No" required>
+                                <label for="internet_no">No</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please select internet service type</div>
+                    </div>
+
+                    <div class="form-group online-security">
+                        <label for="OnlineSecurity">Online Security <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="security_yes" name="OnlineSecurity" value="Yes" required>
+                                <label for="security_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="security_no" name="OnlineSecurity" value="No" required>
+                                <label for="security_no">No</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="security_no_internet" name="OnlineSecurity" value="No internet service" required>
+                                <label for="security_no_internet">No internet service</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify online security status</div>
+                    </div>
+
+                    <div class="form-group online-backup">
+                        <label for="OnlineBackup">Online Backup <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="backup_yes" name="OnlineBackup" value="Yes" required>
+                                <label for="backup_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="backup_no" name="OnlineBackup" value="No" required>
+                                <label for="backup_no">No</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="backup_no_internet" name="OnlineBackup" value="No internet service" required>
+                                <label for="backup_no_internet">No internet service</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify online backup status</div>
+                    </div>
+
+                    <div class="form-group device-protection">
+                        <label for="DeviceProtection">Device Protection <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="device_yes" name="DeviceProtection" value="Yes" required>
+                                <label for="device_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="device_no" name="DeviceProtection" value="No" required>
+                                <label for="device_no">No</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="device_no_internet" name="DeviceProtection" value="No internet service" required>
+                                <label for="device_no_internet">No internet service</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify device protection status</div>
+                    </div>
+
+                    <div class="form-group tech-support">
+                        <label for="TechSupport">Tech Support <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="tech_yes" name="TechSupport" value="Yes" required>
+                                <label for="tech_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="tech_no" name="TechSupport" value="No" required>
+                                <label for="tech_no">No</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="tech_no_internet" name="TechSupport" value="No internet service" required>
+                                <label for="tech_no_internet">No internet service</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify tech support status</div>
+                    </div>
+
+                    <div class="form-group streaming-tv">
+                        <label for="StreamingTV">Streaming TV <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="tv_yes" name="StreamingTV" value="Yes" required>
+                                <label for="tv_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="tv_no" name="StreamingTV" value="No" required>
+                                <label for="tv_no">No</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="tv_no_internet" name="StreamingTV" value="No internet service" required>
+                                <label for="tv_no_internet">No internet service</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify streaming TV status</div>
+                    </div>
+
+                    <div class="form-group streaming-movies">
+                        <label for="StreamingMovies">Streaming Movies <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="movies_yes" name="StreamingMovies" value="Yes" required>
+                                <label for="movies_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="movies_no" name="StreamingMovies" value="No" required>
+                                <label for="movies_no">No</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="movies_no_internet" name="StreamingMovies" value="No internet service" required>
+                                <label for="movies_no_internet">No internet service</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify streaming movies status</div>
+                    </div>
+                </div>
+
+                <!-- Billing Information -->
+                <div class="form-section billing">
+                    <h3 class="section-title billing">Billing Information</h3>
+                    
+                    <div class="form-group contract">
+                        <label for="Contract">Contract <span class="required">*</span></label>
+                        <select id="Contract" name="Contract" required>
+                            <option value="">Select contract type</option>
+                            <option value="Month-to-month">Month-to-month</option>
+                            <option value="One year">One year</option>
+                            <option value="Two year">Two year</option>
+                        </select>
+                        <div class="error-message">Please select a contract type</div>
+                    </div>
+
+                    <div class="form-group paperless-billing">
+                        <label for="PaperlessBilling">Paperless Billing <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="paperless_yes" name="PaperlessBilling" value="Yes" required>
+                                <label for="paperless_yes">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="paperless_no" name="PaperlessBilling" value="No" required>
+                                <label for="paperless_no">No</label>
+                            </div>
+                        </div>
+                        <div class="error-message">Please specify paperless billing preference</div>
+                    </div>
+
+                    <div class="form-group payment-method">
+                        <label for="PaymentMethod">Payment Method <span class="required">*</span></label>
+                        <select id="PaymentMethod" name="PaymentMethod" required>
+                            <option value="">Select payment method</option>
+                            <option value="Electronic check">Electronic check</option>
+                            <option value="Mailed check">Mailed check</option>
+                            <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+                            <option value="Credit card (automatic)">Credit card (automatic)</option>
+                        </select>
+                        <div class="error-message">Please select a payment method</div>
+                    </div>
+
+                    <div class="form-group monthly-charges">
+                        <label for="MonthlyCharges">Monthly Charges ($) <span class="required">*</span></label>
+                        <input type="number" id="MonthlyCharges" name="MonthlyCharges" min="0" step="0.01" required placeholder="e.g., 65.50">
+                        <div class="error-message">Please enter monthly charges</div>
+                    </div>
+
+                    <div class="form-group total-charges">
+                        <label for="TotalCharges">Total Charges ($) <span class="required">*</span></label>
+                        <input type="number" id="TotalCharges" name="TotalCharges" min="0" step="0.01" required placeholder="e.g., 1500.00">
+                        <div class="error-message">Please enter total charges</div>
+                    </div>
+                </div>
+
+                <!-- Submit Section -->
+                <div class="submit-section">
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <span class="submit-text">Predict Churn</span>
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <span>Processing...</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Results Section -->
+        <div class="results-container" id="resultsContainer">
+            <div class="results-header">
+                <h2 class="results-title">Prediction Results</h2>
+                <p class="results-subtitle">Multiple ML models have analyzed the customer data</p>
+            </div>
+            <div class="results-grid" id="resultsGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Backend API configuration
+        const API_BASE_URL = 'http://localhost:5000'; // Change this if your backend runs on different port/host
+        
+        // Form validation and interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('predictionForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = submitBtn.querySelector('.submit-text');
+            const loading = submitBtn.querySelector('.loading');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsGrid = document.getElementById('resultsGrid');
+            const alertContainer = document.getElementById('alertContainer');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
+            // Model configurations for display
+            const modelConfigs = {
+                'Linear Regression': { icon: 'LR', color: '#3b82f6' },
+                'Logistic Regression': { icon: 'LOG', color: '#10b981' },
+                'Decision Tree': { icon: 'DT', color: '#f59e0b' },
+                'Random Forest': { icon: 'RF', color: '#8b5cf6' },
+                'Support Vector Machine': { icon: 'SVM', color: '#ef4444' }
+            };
+
+            // Accordion functionality
+            const sections = document.querySelectorAll('.form-section');
+            sections.forEach(section => {
+                const title = section.querySelector('.section-title');
+                title.addEventListener('click', () => {
+                    // Close all other sections
+                    sections.forEach(s => {
+                        if (s !== section) {
+                            s.classList.remove('open');
+                        }
+                    });
+                    // Toggle current section
+                    section.classList.toggle('open');
+                    updateSectionValidation(section);
+                });
+            });
+
+            // Radio button styling and interaction
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const name = this.name;
+                    // Clear selection from all radio items in this group
+                    document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+                        r.closest('.radio-item').classList.remove('selected');
+                    });
+                    // Add selection to current item
+                    this.closest('.radio-item').classList.add('selected');
+                    
+                    // Clear error state
+                    const formGroup = this.closest('.form-group');
+                    formGroup.classList.remove('error');
+                    updateSectionValidation(this.closest('.form-section'));
+                });
+            });
+
+            // Real-time validation
+            form.querySelectorAll('input, select').forEach(field => {
+                field.addEventListener('input', function() {
+                    validateField(this);
+                    updateSectionValidation(this.closest('.form-section'));
+                });
+
+                field.addEventListener('blur', function() {
+                    validateField(this);
+                    updateSectionValidation(this.closest('.form-section'));
+                });
+            });
+
+            function validateField(field) {
+                const formGroup = field.closest('.form-group');
+                const isValid = field.checkValidity();
+                
+                if (isValid) {
+                    formGroup.classList.remove('error');
+                } else {
+                    formGroup.classList.add('error');
+                }
+                
+                return isValid;
+            }
+
+            function updateSectionValidation(section) {
+                if (!section) return;
+                const requiredFields = section.querySelectorAll('input[required], select[required]');
+                let allValid = true;
+                requiredFields.forEach(field => {
+                    if (!field.checkValidity()) {
+                        allValid = false;
+                    }
+                });
+                section.classList.remove('valid-section', 'invalid-section');
+                if (allValid) {
+                    section.classList.add('valid-section');
+                } else {
+                    section.classList.add('invalid-section');
+                }
+            }
+
+            // Update all sections on load
+            sections.forEach(updateSectionValidation);
+
+            function showAlert(message, type = 'error') {
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} show`;
+                alert.textContent = message;
+                
+                alertContainer.innerHTML = '';
+                alertContainer.appendChild(alert);
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    alert.classList.remove('show');
+                    setTimeout(() => alert.remove(), 300);
+                }, 5000);
+            }
+
+            // Form submission handler
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Hide previous results and alerts
+                resultsContainer.classList.remove('show');
+                alertContainer.innerHTML = '';
+                
+                // Validate all fields
+                let isValid = true;
+                const invalidFields = [];
+                
+                form.querySelectorAll('input[required], select[required]').forEach(field => {
+                    if (!validateField(field)) {
+                        isValid = false;
+                        const label = field.closest('.form-group').querySelector('label').textContent.replace(' *', '');
+                        invalidFields.push(label);
+                    }
+                });
+
+                if (!isValid) {
+                    showAlert(`Please fill in all required fields: ${invalidFields.join(', ')}`, 'error');
+                    // Scroll to first error
+                    const firstError = form.querySelector('.form-group.error');
+                    if (firstError) {
+                        const section = firstError.closest('.form-section');
+                        section.classList.add('open');
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return;
+                }
+
+                // Show loading states
+                submitBtn.disabled = true;
+                submitText.classList.add('hidden');
+                loading.classList.add('active');
+                loadingOverlay.classList.add('active');
+
+                try {
+                    // Collect form data
+                    const formData = new FormData(form);
+                    const data = {};
+                    
+                    // Convert FormData to object
+                    for (let [key, value] of formData.entries()) {
+                        data[key] = value;
+                    }
+
+                    console.log('Sending data to backend:', data);
+
+                    // Send to backend API
+                    const response = await fetch(`${API_BASE_URL}/predict`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const results = await response.json();
+                    console.log('Received predictions:', results);
+
+                    displayResults(results);
+                    showAlert('Predictions generated successfully!', 'success');
+
+                } catch (error) {
+                    console.error('Prediction error:', error);
+                    
+                    let errorMessage = 'An error occurred while processing your request.';
+                    
+                    if (error.message.includes('fetch')) {
+                        errorMessage = `Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running.`;
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+                    
+                    showAlert(errorMessage, 'error');
+                } finally {
+                    // Reset button and loading states
+                    submitBtn.disabled = false;
+                    submitText.classList.remove('hidden');
+                    loading.classList.remove('active');
+                    loadingOverlay.classList.remove('active');
+                }
+            });
+
+            function displayResults(results) {
+                let html = '';
+                
+                results.forEach((result, index) => {
+                    const config = modelConfigs[result.model] || { icon: 'ML', color: '#6b7280' };
+                    const prediction = result.prediction === 1 ? 'Will Churn' : 'Will Stay';
+                    const predictionClass = result.prediction === 1 ? 'churn' : 'no-churn';
+                    const predictionIcon = result.prediction === 1 ? '⚠️' : '✅';
+                    const confidence = (result.confidence * 100).toFixed(1);
+                    const churnProb = (result.churn_probability * 100).toFixed(1);
+                    
+                    html += `
+                        <div class="model-result" style="animation-delay: ${index * 0.1}s">
+                            <div class="model-header">
+                                <div class="model-name">${result.model}</div>
+                                <div class="model-icon" style="background: ${config.color}">
+                                    ${config.icon}
+                                </div>
+                            </div>
+                            
+                            <div class="prediction-section">
+                                <div class="prediction-label">Prediction</div>
+                                <div class="prediction ${predictionClass}">
+                                    <span class="prediction-icon">${predictionIcon}</span>
+                                    ${prediction}
+                                </div>
+                            </div>
+
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" style="width: ${confidence}%"></div>
+                            </div>
+                            <div class="confidence-text">Confidence: ${confidence}%</div>
+
+                            <div class="probability-section">
+                                <div class="probability-label">Churn Probability</div>
+                                <div class="probability-value">${churnProb}%</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                resultsGrid.innerHTML = html;
+                resultsContainer.classList.add('show');
+                
+                // Smooth scroll to results
+                setTimeout(() => {
+                    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 200);
+
+                // Animate confidence bars
+                setTimeout(() => {
+                    document.querySelectorAll('.confidence-fill').forEach(fill => {
+                        fill.style.width = fill.style.width;
+                    });
+                }, 500);
+            }
+
+            // Test backend connection on page load
+            async function testBackendConnection() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/health`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Backend connection successful:', data);
+                    }
+                } catch (error) {
+                    console.warn('Backend not available yet:', error.message);
+                    showAlert(`Backend server not detected at ${API_BASE_URL}. Please start the backend before making predictions.`, 'error');
+                }
+            }
+
+            // Test connection after a short delay
+            setTimeout(testBackendConnection, 1000);
+        });
+    </script>
+</body>
+</html>
