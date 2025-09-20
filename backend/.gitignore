@@ -1,0 +1,41 @@
+# Byte-compiled / Python files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Flask instance folder
+instance/
+*.sqlite3
+
+# Pytest / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Ignore Python wheel / build files
+build/
+dist/
+*.egg-info/
+
+# Ignore large ML temporary files (optional, if you don't want temp data)
+*.h5
+*.joblib.tmp
+
+# Allow your model pickle files
+# Do NOT ignore *.pkl files under models/
+!models/*.pkl
